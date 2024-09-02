@@ -39,7 +39,8 @@ current = response.Current()
 current_temperature_2m = round(current.Variables(0).Value(), 1)
 current_relative_humidity_2m = current.Variables(1).Value()
 current_wind_speed_10m = round(current.Variables(2).Value(),1)
-current_wind_direction_10m = current.Variables(3).Value()
+current_wind_direction_10m = round(current.Variables(3).Value())
+
 
 print(f"Current time {current.Time()}")
 print(f"Current temperature_2m {current_temperature_2m}")
@@ -125,65 +126,91 @@ except:
      pass
 
 
+import tkinter as tk
+from tkinter import ttk
 
-def Calcolo_resa(*args):
-     try:
-          olive = float(olive_input.get())
-          olio = float(olio_input.get())
-          resa = round(((olio/olive)*100),2)
-          resa_input.set(f"La resa per quintale è {resa}")
-     except ValueError:
-          pass
+class Agriweather(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Agriweather")
+        self.main_frame = ttk.Frame(self, padding=(10, 10))
+        self.main_frame.grid(column=0, row=0)
+        
+        self.dati_meteo = DatiMeteo(self.main_frame)
+        self.setup_widgets()
 
-root=tk.Tk()
-root.title("Agriweather")
+    def setup_widgets(self):
+        separator = ttk.Separator(self.main_frame, orient='vertical')
+        separator.grid(column=1, row=0, rowspan=3, sticky='ns', padx=10)
 
+        dati_produzione = ttk.Frame(self.main_frame)
+        dati_produzione.grid(column=2, row=0, sticky="nw")
 
-main_frame = ttk.Frame(root)
-main_frame.grid(column=0, row=0, padx=10, pady=10)
+        olive_input = tk.StringVar()
+        olio_input = tk.StringVar()
+        resa_input = tk.StringVar()
 
-dati_meteo = ttk.Frame(main_frame)
-dati_meteo.grid(column=0, row=0)
+        oliva_label = ttk.Label(dati_produzione, text="Inserire quantità olive raccolte in kg:")
+        oliva_input_entry = ttk.Entry(dati_produzione, textvariable=olive_input)
+        olio_label = ttk.Label(dati_produzione, text="Inserire quantità olio in kg:")
+        olio_input_entry = ttk.Entry(dati_produzione, textvariable=olio_input)
+        resa_display = ttk.Label(dati_produzione, textvariable=resa_input)
+        resa_button = ttk.Button(dati_produzione, text="Calcola", command=lambda: Calcolo_resa(olive_input, olio_input, resa_input))
 
-temperatura_var = tk.StringVar()
-temperatura_var.set(f"Temperatura corrente {current_temperature_2m}°C")
-temperatura_label = ttk.Label(dati_meteo, textvariable=temperatura_var)
-temperatura_label.grid(column=0, row=0, sticky="w")
+        oliva_label.grid(column=0, row=0, padx=5, pady=5, sticky="w")
+        oliva_input_entry.grid(column=1, row=0, padx=5, pady=5)
+        olio_label.grid(column=0, row=1, padx=5, pady=5, sticky="w")
+        olio_input_entry.grid(column=1, row=1, padx=5, pady=5)
+        resa_display.grid(column=1, row=2, padx=5, pady=5, sticky="w")
+        resa_button.grid(column=0, row=2, padx=5, pady=5, sticky="w")
 
-umidità_var = tk.StringVar()
-umidità_var.set(f"Umidità relativa {current_relative_humidity_2m}%")
-umidità_label = ttk.Label(dati_meteo, textvariable=umidità_var)
-umidità_label.grid(column=0, row=1,sticky="w")
+class DatiMeteo:
+    def __init__(self, parent):
+        self.dati_meteo = ttk.Frame(parent)
+        self.dati_meteo.grid(column=0, row=0, sticky="nw")
+        
+        self.temperatura_var = tk.StringVar()
+        self.temperatura_var.set(f"Temperatura corrente {current_temperature_2m}°C")  
+        self.temperatura_label = ttk.Label(self.dati_meteo, textvariable=self.temperatura_var)
+        self.temperatura_label.grid(column=0, row=0, sticky="w")
 
-velocità_vento_var = tk.StringVar()
-velocità_vento_var.set(f"Velocità del vento {current_wind_speed_10m} Km/h")
-velocità_vento_label = ttk.Label(dati_meteo, textvariable=velocità_vento_var)
-velocità_vento_label.grid(column=0, row=3,sticky="w")
+        self.umidità_var = tk.StringVar()
+        self.umidità_var.set(f"Umidità relativa {current_relative_humidity_2m}%")  
+        self.umidità_label = ttk.Label(self.dati_meteo, textvariable=self.umidità_var)
+        self.umidità_label.grid(column=0, row=1, sticky="w")
 
-separator = ttk.Separator(main_frame, orient='vertical')
-separator.grid(column=1, row=0, sticky='ns', padx=10)
+        self.velocità_vento_var = tk.StringVar()
+        self.velocità_vento_var.set(f"Velocità del vento {current_wind_speed_10m} Km/h")
+        self.velocità_vento_label = ttk.Label(self.dati_meteo, textvariable=self.velocità_vento_var)
+        self.velocità_vento_label.grid(column=0, row=2, sticky="w")
+        
+        self.direzione_vento_var = tk.StringVar()
+        if current_wind_direction_10m == 0:
+         self.direzione_vento_var.set(f"La direzione del vento è Nord") 
+        elif 0 <= current_wind_direction_10m <= 45:
+         self.direzione_vento_var.set(f"La direzione del vento è Nord-Est") 
+        elif 45 <= current_wind_direction_10m <= 90:
+         self.direzione_vento_var.set(f"La direzione del vento è Est-Nord")
+        elif current_wind_direction_10m == 90:
+         self.direzione_vento_var.set(f"La direzione del vento è Est")
+        else:
+            pass
+        self.direzione_vento_label = ttk.Label(self.dati_meteo, textvariable=self.direzione_vento_var)
+        self.direzione_vento_label.grid(column=0, row=3, sticky="w")
+        
+        
 
-dati_produzione = ttk.Frame(main_frame)
-dati_produzione.grid(column=3, row=0)
+def Calcolo_resa(olive_input, olio_input, resa_input):
+    try:
+        olive = float(olive_input.get())
+        olio = float(olio_input.get())
+        resa = round(((olio / olive) * 100), 2)
+        resa_input.set(f"La resa per quintale è {resa} litri")
+    except ValueError:
+        resa_input.set("Errore nei dati inseriti")
 
-olive_input =tk.StringVar()
-olio_input = tk.StringVar()
-resa_input = tk.StringVar()
-oliva_label = ttk.Label(dati_produzione, text="Inserire quantità olive raccolte in kg:")
-oliva_input =ttk.Entry(dati_produzione, textvariable=olive_input)
-olio_label = ttk.Label(dati_produzione, text="Inserire quantità olio in kg:")
-olio_input =ttk.Entry(dati_produzione, textvariable=olio_input)
-resa_display = ttk.Label(dati_produzione, textvariable= resa_input)
-resa_button = ttk.Button(dati_produzione, text="Calcola", command= Calcolo_resa)
-oliva_label.grid(column=0, row=0, padx=5, pady=5, sticky="w")
-olio_label.grid(column=0, row=1, padx=5, pady=5, sticky="w")
-oliva_input.grid(column=1, row=0, padx=5, pady=5)
-olio_input.grid(column=1, row=1, padx=5, pady=5)
-resa_display.grid(column=1, row=2, padx=5, pady=5,sticky="w")
-resa_button.grid(column=0, row=2, padx=5, pady=5,sticky="w")
-
-     
-
+root = Agriweather()
 
 root.mainloop()
+
 
