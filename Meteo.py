@@ -18,7 +18,6 @@ params = {
 	"latitude": 41.5864,
 	"longitude": 12.9707,
 	"current": ["temperature_2m", "relative_humidity_2m", "wind_speed_10m", "wind_direction_10m"],
-	"minutely_15": ["temperature_2m", "relative_humidity_2m", "wind_speed_10m", "wind_direction_10m"],
 	"hourly": ["temperature_2m", "dew_point_2m", "evapotranspiration", "wind_speed_10m", "wind_direction_10m"],
 	"daily": ["temperature_2m_max", "temperature_2m_min", "precipitation_sum", "precipitation_probability_max", "wind_speed_10m_max", "wind_direction_10m_dominant"],
 	"timezone": "auto",
@@ -41,33 +40,6 @@ current_relative_humidity_2m = current.Variables(1).Value()
 current_wind_speed_10m = round(current.Variables(2).Value(),1)
 current_wind_direction_10m = round(current.Variables(3).Value())
 
-
-print(f"Current time {current.Time()}")
-print(f"Current temperature_2m {current_temperature_2m}")
-print(f"Current relative_humidity_2m {current_relative_humidity_2m}")
-print(f"Current wind_speed_10m {current_wind_speed_10m}")
-print(f"Current wind_direction_10m {current_wind_direction_10m}")
-
-# Process minutely_15 data. The order of variables needs to be the same as requested.
-minutely_15 = response.Minutely15()
-minutely_15_temperature_2m = minutely_15.Variables(0).ValuesAsNumpy()
-minutely_15_relative_humidity_2m = minutely_15.Variables(1).ValuesAsNumpy()
-minutely_15_wind_speed_10m = minutely_15.Variables(2).ValuesAsNumpy()
-minutely_15_wind_direction_10m = minutely_15.Variables(3).ValuesAsNumpy()
-
-minutely_15_data = {"date": pd.date_range(
-	start = pd.to_datetime(minutely_15.Time(), unit = "s", utc = True),
-	end = pd.to_datetime(minutely_15.TimeEnd(), unit = "s", utc = True),
-	freq = pd.Timedelta(seconds = minutely_15.Interval()),
-	inclusive = "left"
-)}
-minutely_15_data["temperature_2m"] = minutely_15_temperature_2m
-minutely_15_data["relative_humidity_2m"] = minutely_15_relative_humidity_2m
-minutely_15_data["wind_speed_10m"] = minutely_15_wind_speed_10m
-minutely_15_data["wind_direction_10m"] = minutely_15_wind_direction_10m
-
-minutely_15_dataframe = pd.DataFrame(data = minutely_15_data)
-print(minutely_15_dataframe)
 
 # Process hourly data. The order of variables needs to be the same as requested.
 hourly = response.Hourly()
@@ -170,29 +142,46 @@ class DatiMeteo:
         self.dati_meteo.grid(column=0, row=0, sticky="nw")
         
         self.temperatura_var = tk.StringVar()
-        self.temperatura_var.set(f"Temperatura corrente {current_temperature_2m}°C")  
+        self.temperatura_var.set(f"Temperatura corrente: {current_temperature_2m}°C")  
         self.temperatura_label = ttk.Label(self.dati_meteo, textvariable=self.temperatura_var)
         self.temperatura_label.grid(column=0, row=0, sticky="w")
 
         self.umidità_var = tk.StringVar()
-        self.umidità_var.set(f"Umidità relativa {current_relative_humidity_2m}%")  
+        self.umidità_var.set(f"Umidità relativa: {current_relative_humidity_2m}%")  
         self.umidità_label = ttk.Label(self.dati_meteo, textvariable=self.umidità_var)
         self.umidità_label.grid(column=0, row=1, sticky="w")
 
         self.velocità_vento_var = tk.StringVar()
-        self.velocità_vento_var.set(f"Velocità del vento {current_wind_speed_10m} Km/h")
+        self.velocità_vento_var.set(f"Velocità del vento: {current_wind_speed_10m} Km/h")
         self.velocità_vento_label = ttk.Label(self.dati_meteo, textvariable=self.velocità_vento_var)
         self.velocità_vento_label.grid(column=0, row=2, sticky="w")
         
         self.direzione_vento_var = tk.StringVar()
-        if current_wind_direction_10m == 0:
-         self.direzione_vento_var.set(f"La direzione del vento è Nord") 
+        if current_wind_direction_10m == 0 or 360:
+         self.direzione_vento_var.set(f"La direzione del vento è: Nord") 
         elif 0 <= current_wind_direction_10m <= 45:
-         self.direzione_vento_var.set(f"La direzione del vento è Nord-Est") 
+         self.direzione_vento_var.set(f"La direzione del vento è: Nord-Est") 
         elif 45 <= current_wind_direction_10m <= 90:
-         self.direzione_vento_var.set(f"La direzione del vento è Est-Nord")
+         self.direzione_vento_var.set(f"La direzione del vento è: Est-Nord")
         elif current_wind_direction_10m == 90:
-         self.direzione_vento_var.set(f"La direzione del vento è Est")
+         self.direzione_vento_var.set(f"La direzione del vento è: Est")
+        elif 90 <= current_wind_direction_10m <= 135:
+         self.direzione_vento_var.set(f"La direzione del vento è: Est-Sud")
+        elif 135 <= current_wind_direction_10m <= 180:
+         self.direzione_vento_var.set(f"La direzione del vento è: Sud-Est")
+        elif current_wind_direction_10m == 180:
+         self.direzione_vento_var.set(f"La direzione del vento è: Sud")
+        elif 180 <= current_wind_direction_10m <= 225:
+         self.direzione_vento_var.set(f"La direzione del vento è: Sud-Ovest")
+        elif 225 <= current_wind_direction_10m <= 270:
+         self.direzione_vento_var.set(f"La direzione del vento è: Ovest-Sud")
+        elif current_wind_direction_10m == 270:
+         self.direzione_vento_var.set(f"La direzione del vento è: Ovest")
+        elif 270 <= current_wind_direction_10m <= 315:
+         self.direzione_vento_var.set(f"La direzione del vento è: Ovest-Nord")
+        elif 315 <= current_wind_direction_10m <= 360:
+         self.direzione_vento_var.set(f"La direzione del vento è: Nord-Ovest")
+           
         else:
             pass
         self.direzione_vento_label = ttk.Label(self.dati_meteo, textvariable=self.direzione_vento_var)
@@ -211,6 +200,12 @@ def Calcolo_resa(olive_input, olio_input, resa_input):
 
 root = Agriweather()
 
+style = ttk.Style(root)
+
+style.theme_use("alt")
+
 root.mainloop()
+
+
 
 
