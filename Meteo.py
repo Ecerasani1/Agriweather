@@ -39,6 +39,10 @@ current_temperature_2m = round(current.Variables(0).Value(), 1)
 current_relative_humidity_2m = current.Variables(1).Value()
 current_wind_speed_10m = round(current.Variables(2).Value(),1)
 current_wind_direction_10m = round(current.Variables(3).Value())
+current_wind_gusts_10m = round(current.Variables(0).Value())
+current_weather_code = current.Variables(0).Value()
+
+
 
 
 # Process hourly data. The order of variables needs to be the same as requested.
@@ -87,7 +91,7 @@ daily_data["wind_speed_10m_max"] = daily_wind_speed_10m_max
 daily_data["wind_direction_10m_dominant"] = daily_wind_direction_10m_dominant
 
 daily_dataframe = pd.DataFrame(data = daily_data)
-print(daily_dataframe)
+print(daily_precipitation_sum)
 
 
 
@@ -101,19 +105,29 @@ except:
 import tkinter as tk
 from tkinter import ttk
 
+
 class Agriweather(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Agriweather")
+        
+        self.info_generali = InfoGenerali(self)
+        self.info_generali.grid(column=0, row=0,columnspan=2, sticky="ew", padx=10, pady=(10, 0))
+        
+        self.horizontal_separator = ttk.Separator(self, orient='horizontal')
+        self.horizontal_separator.grid(column=0, row=1, columnspan=3, sticky='ew', padx=10, pady=(0, 10))
+
         self.main_frame = ttk.Frame(self, padding=(10, 10))
-        self.main_frame.grid(column=0, row=0)
+        self.main_frame.grid(column=0, row=2, sticky="nsew")
         
         self.dati_meteo = DatiMeteo(self.main_frame)
+        self.dati_meteo.grid(column=0, row=0, sticky="nw")
+        
         self.setup_widgets()
 
     def setup_widgets(self):
         separator = ttk.Separator(self.main_frame, orient='vertical')
-        separator.grid(column=1, row=0, rowspan=3, sticky='ns', padx=10)
+        separator.grid(column=1, row=0, sticky='ns', padx=10)
 
         dati_produzione = ttk.Frame(self.main_frame)
         dati_produzione.grid(column=2, row=0, sticky="nw")
@@ -135,25 +149,30 @@ class Agriweather(tk.Tk):
         olio_input_entry.grid(column=1, row=1, padx=5, pady=5)
         resa_display.grid(column=1, row=2, padx=5, pady=5, sticky="w")
         resa_button.grid(column=0, row=2, padx=5, pady=5, sticky="w")
-
-class DatiMeteo:
+        
+class InfoGenerali(ttk.Frame):
     def __init__(self, parent):
-        self.dati_meteo = ttk.Frame(parent)
-        self.dati_meteo.grid(column=0, row=0, sticky="nw")
+        super().__init__(parent)
+        self.nome = ttk.Label(self, text="Strumento per Olivicoltura a Norma")
+        self.nome.grid(column=0, row=0, sticky="w", pady=(0, 10))
+
+class DatiMeteo(ttk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
         
         self.temperatura_var = tk.StringVar()
         self.temperatura_var.set(f"Temperatura corrente: {current_temperature_2m}°C")  
-        self.temperatura_label = ttk.Label(self.dati_meteo, textvariable=self.temperatura_var)
+        self.temperatura_label = ttk.Label(self, textvariable=self.temperatura_var)
         self.temperatura_label.grid(column=0, row=0, sticky="w")
 
         self.umidità_var = tk.StringVar()
         self.umidità_var.set(f"Umidità relativa: {current_relative_humidity_2m}%")  
-        self.umidità_label = ttk.Label(self.dati_meteo, textvariable=self.umidità_var)
+        self.umidità_label = ttk.Label(self, textvariable=self.umidità_var)
         self.umidità_label.grid(column=0, row=1, sticky="w")
 
         self.velocità_vento_var = tk.StringVar()
         self.velocità_vento_var.set(f"Velocità del vento: {current_wind_speed_10m} Km/h")
-        self.velocità_vento_label = ttk.Label(self.dati_meteo, textvariable=self.velocità_vento_var)
+        self.velocità_vento_label = ttk.Label(self, textvariable=self.velocità_vento_var)
         self.velocità_vento_label.grid(column=0, row=2, sticky="w")
         
         self.direzione_vento_var = tk.StringVar()
@@ -184,10 +203,15 @@ class DatiMeteo:
            
         else:
             pass
-        self.direzione_vento_label = ttk.Label(self.dati_meteo, textvariable=self.direzione_vento_var)
+        self.direzione_vento_label = ttk.Label(self, textvariable=self.direzione_vento_var)
         self.direzione_vento_label.grid(column=0, row=3, sticky="w")
         
+        self.raffica_vento_var = tk.StringVar()
+        self.raffica_vento_var.set(f"Raffica del vento max: {current_wind_gusts_10m} Km/h")
+        self.raffica_vento_label = ttk.Label(self, textvariable=self.raffica_vento_var)
+        self.raffica_vento_label.grid(column=0, row=4, sticky="w")
         
+
 
 def Calcolo_resa(olive_input, olio_input, resa_input):
     try:
@@ -197,6 +221,8 @@ def Calcolo_resa(olive_input, olio_input, resa_input):
         resa_input.set(f"La resa per quintale è {resa} litri")
     except ValueError:
         resa_input.set("Errore nei dati inseriti")
+
+
 
 root = Agriweather()
 
