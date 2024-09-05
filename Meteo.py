@@ -4,7 +4,9 @@ import requests_cache
 import pandas as pd
 from retry_requests import retry
 import tkinter as tk
-from tkinter import ttk 
+from tkinter import ttk
+from tkinter import *
+from PIL import ImageTk, Image
 
 # Setup the Open-Meteo API client with cache and retry on error
 cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
@@ -46,36 +48,24 @@ current_weather_code = current.Variables(0).Value()
 
 
 # Process hourly data. The order of variables needs to be the same as requested.
-hourly = response.Hourly()
-hourly_temperature_2m = hourly.Variables(0).ValuesAsNumpy()
-hourly_dew_point_2m = hourly.Variables(1).ValuesAsNumpy()
-hourly_evapotranspiration = hourly.Variables(2).ValuesAsNumpy()
-hourly_wind_speed_10m = hourly.Variables(3).ValuesAsNumpy()
-hourly_wind_direction_10m = hourly.Variables(4).ValuesAsNumpy()
+# hourly = response.Hourly()
 
-hourly_data = {"date": pd.date_range(
-	start = pd.to_datetime(hourly.Time(), unit = "s", utc = True),
-	end = pd.to_datetime(hourly.TimeEnd(), unit = "s", utc = True),
-	freq = pd.Timedelta(seconds = hourly.Interval()),
-	inclusive = "left"
-)}
-hourly_data["temperature_2m"] = hourly_temperature_2m
-hourly_data["dew_point_2m"] = hourly_dew_point_2m
-hourly_data["evapotranspiration"] = hourly_evapotranspiration
-hourly_data["wind_speed_10m"] = hourly_wind_speed_10m
-hourly_data["wind_direction_10m"] = hourly_wind_direction_10m
+# hourly_data = {"date": pd.date_range(
+# 	start = pd.to_datetime(hourly.Time(), unit = "s", utc = True),
+# 	end = pd.to_datetime(hourly.TimeEnd(), unit = "s", utc = True),
+# 	freq = pd.Timedelta(seconds = hourly.Interval()),
+# 	inclusive = "left"
+# )}
 
-hourly_dataframe = pd.DataFrame(data = hourly_data)
-print(hourly_dataframe)
+
+# hourly_dataframe = pd.DataFrame(data = hourly_data)
+# print(hourly_dataframe)
 
 # Process daily data. The order of variables needs to be the same as requested.
 daily = response.Daily()
-daily_temperature_2m_max = daily.Variables(0).ValuesAsNumpy()
-daily_temperature_2m_min = daily.Variables(1).ValuesAsNumpy()
-daily_precipitation_sum = daily.Variables(2).ValuesAsNumpy()
 daily_precipitation_probability_max = daily.Variables(3).ValuesAsNumpy()
-daily_wind_speed_10m_max = daily.Variables(4).ValuesAsNumpy()
-daily_wind_direction_10m_dominant = daily.Variables(5).ValuesAsNumpy()
+daily_precipitation_probability = (daily_precipitation_probability_max[-1])
+
 
 daily_data = {"date": pd.date_range(
 	start = pd.to_datetime(daily.Time(), unit = "s", utc = True),
@@ -83,15 +73,13 @@ daily_data = {"date": pd.date_range(
 	freq = pd.Timedelta(seconds = daily.Interval()),
 	inclusive = "left"
 )}
-daily_data["temperature_2m_max"] = daily_temperature_2m_max
-daily_data["temperature_2m_min"] = daily_temperature_2m_min
-daily_data["precipitation_sum"] = daily_precipitation_sum
-daily_data["precipitation_probability_max"] = daily_precipitation_probability_max
-daily_data["wind_speed_10m_max"] = daily_wind_speed_10m_max
-daily_data["wind_direction_10m_dominant"] = daily_wind_direction_10m_dominant
+
+
+
 
 daily_dataframe = pd.DataFrame(data = daily_data)
-print(daily_precipitation_sum)
+print(daily_dataframe)
+
 
 
 
@@ -107,18 +95,23 @@ from tkinter import ttk
 
 
 class Agriweather(tk.Tk):
+    
     def __init__(self):
         super().__init__()
         self.title("Agriweather")
         
         self.info_generali = InfoGenerali(self)
-        self.info_generali.grid(column=0, row=0,columnspan=2, sticky="ew", padx=10, pady=(10, 0))
+        self.info_generali.grid(column=0, row=0,columnspan=3, sticky="ew")
+        
         
         self.horizontal_separator = ttk.Separator(self, orient='horizontal')
-        self.horizontal_separator.grid(column=0, row=1, columnspan=3, sticky='ew', padx=10, pady=(0, 10))
+        self.horizontal_separator.grid(column=0, row=1, columnspan=3, sticky='ew')
 
         self.main_frame = ttk.Frame(self, padding=(10, 10))
-        self.main_frame.grid(column=0, row=2, sticky="nsew")
+        self.main_frame.grid(column=0, row=2,columnspan=3, sticky="nsew")
+        self.main_frame.columnconfigure(0, weight=1)
+        self.main_frame.columnconfigure(1, weight=1)
+        self.main_frame.columnconfigure(2, weight=1)
         
         self.dati_meteo = DatiMeteo(self.main_frame)
         self.dati_meteo.grid(column=0, row=0, sticky="nw")
@@ -153,9 +146,19 @@ class Agriweather(tk.Tk):
 class InfoGenerali(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
-        self.nome = ttk.Label(self, text="Strumento per Olivicoltura a Norma")
-        self.nome.grid(column=0, row=0, sticky="w", pady=(0, 10))
+        self.columnconfigure(0, weight=1)
+        self.nome = ttk.Label(self, text="Agriweather - Olivicoltura",font=("Arial", 12, "bold"))
+        self.nome.grid(column=0, row=0, sticky="n", pady=(0, 10))
+        
+        self.load_image()
+    def load_image(self):
+        img = Image.open("./Immaginee-removebg-preview.png")
+        img = img.resize((200, 150), Image.Resampling.LANCZOS)
+        self.img_tk = ImageTk.PhotoImage(img)
 
+        self.image_label = ttk.Label(self, image=self.img_tk)
+        self.image_label.grid(column=0, row=1, pady=(10, 0))
+        
 class DatiMeteo(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
@@ -211,6 +214,11 @@ class DatiMeteo(ttk.Frame):
         self.raffica_vento_label = ttk.Label(self, textvariable=self.raffica_vento_var)
         self.raffica_vento_label.grid(column=0, row=4, sticky="w")
         
+        self.probabilità_precipitazioni_var = tk.StringVar()
+        self.probabilità_precipitazioni_var.set(f"Probabilità di pioggia: {daily_precipitation_probability} %")
+        self.probabilità_precipitazioni_label = ttk.Label(self, textvariable=self.probabilità_precipitazioni_var)
+        self.probabilità_precipitazioni_label.grid(column=0, row=5, sticky="w")
+        
 
 
 def Calcolo_resa(olive_input, olio_input, resa_input):
@@ -225,7 +233,6 @@ def Calcolo_resa(olive_input, olio_input, resa_input):
 
 
 root = Agriweather()
-
 style = ttk.Style(root)
 
 style.theme_use("alt")
