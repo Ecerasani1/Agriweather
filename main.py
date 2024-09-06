@@ -19,11 +19,10 @@ url = "https://api.open-meteo.com/v1/forecast"
 params = {
 	"latitude": 41.5864,
 	"longitude": 12.9707,
-	"current": ["temperature_2m", "relative_humidity_2m", "wind_speed_10m", "wind_direction_10m"],
-	"hourly": ["temperature_2m", "dew_point_2m", "evapotranspiration", "wind_speed_10m", "wind_direction_10m"],
-	"daily": ["temperature_2m_max", "temperature_2m_min", "precipitation_sum", "precipitation_probability_max", "wind_speed_10m_max", "wind_direction_10m_dominant"],
+	"current": ["temperature_2m", "relative_humidity_2m", "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "weather_code" ],
+	"daily": ["precipitation_sum", "precipitation_probability_max"],
 	"timezone": "auto",
-	"past_days": 14,
+	"past_days": 31,
 	"forecast_days": 1
 }
 responses = openmeteo.weather_api(url, params=params)
@@ -45,26 +44,14 @@ current_wind_gusts_10m = round(current.Variables(0).Value())
 current_weather_code = current.Variables(0).Value()
 
 
-
-
-# Process hourly data. The order of variables needs to be the same as requested.
-# hourly = response.Hourly()
-
-# hourly_data = {"date": pd.date_range(
-# 	start = pd.to_datetime(hourly.Time(), unit = "s", utc = True),
-# 	end = pd.to_datetime(hourly.TimeEnd(), unit = "s", utc = True),
-# 	freq = pd.Timedelta(seconds = hourly.Interval()),
-# 	inclusive = "left"
-# )}
-
-
-# hourly_dataframe = pd.DataFrame(data = hourly_data)
-# print(hourly_dataframe)
-
 # Process daily data. The order of variables needs to be the same as requested.
 daily = response.Daily()
-daily_precipitation_probability_max = daily.Variables(3).ValuesAsNumpy()
+daily_precipitation_probability_max = daily.Variables(1).ValuesAsNumpy()
 daily_precipitation_probability = (daily_precipitation_probability_max[-1])
+daily_precipitation_sum = daily.Variables(0).ValuesAsNumpy()
+weekly_precipitation = round(sum(daily_precipitation_sum[-8:]))
+monthly_precipitation = round(sum(daily_precipitation_sum[-32:]))
+
 
 
 daily_data = {"date": pd.date_range(
@@ -75,10 +62,12 @@ daily_data = {"date": pd.date_range(
 )}
 
 
-
+daily_data["precipitation_sum"] = daily_precipitation_sum
+daily_data["precipitation_probability_max"] = daily_precipitation_probability_max
 
 daily_dataframe = pd.DataFrame(data = daily_data)
 print(daily_dataframe)
+
 
 
 
@@ -215,9 +204,19 @@ class DatiMeteo(ttk.Frame):
         self.raffica_vento_label.grid(column=0, row=4, sticky="w")
         
         self.probabilità_precipitazioni_var = tk.StringVar()
-        self.probabilità_precipitazioni_var.set(f"Probabilità di pioggia: {daily_precipitation_probability} %")
+        self.probabilità_precipitazioni_var.set(f"Probabilità di pioggia oggi: {daily_precipitation_probability} %")
         self.probabilità_precipitazioni_label = ttk.Label(self, textvariable=self.probabilità_precipitazioni_var)
         self.probabilità_precipitazioni_label.grid(column=0, row=5, sticky="w")
+        
+        self.precipitazioni_settimanali_var = tk.StringVar()
+        self.precipitazioni_settimanali_var.set(f"Pioggia cumulata negli ultimi 7gg: {weekly_precipitation} mm")
+        self.precipitazioni_settimanali_label = ttk.Label(self, textvariable=self.precipitazioni_settimanali_var)
+        self.precipitazioni_settimanali_label.grid(column=0, row=5, sticky="w")
+        
+        self.precipitazioni_mensili_var = tk.StringVar()
+        self.precipitazioni_mensili_var.set(f"Pioggia cumulata negli ultimi 31gg: {monthly_precipitation} mm")
+        self.precipitazioni_mensili_label = ttk.Label(self, textvariable=self.precipitazioni_mensili_var)
+        self.precipitazioni_mensili_label.grid(column=0, row=6, sticky="w")
         
 
 
