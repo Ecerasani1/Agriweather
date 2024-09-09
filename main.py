@@ -19,7 +19,7 @@ url = "https://api.open-meteo.com/v1/forecast"
 params = {
 	"latitude": 41.5864,
 	"longitude": 12.9707,
-	"current": ["temperature_2m", "relative_humidity_2m", "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "weather_code" ],
+	"current": ["temperature_2m", "relative_humidity_2m", "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "weather_code","et0_fao_evapotranspiration" ],
 	"daily": ["precipitation_sum", "precipitation_probability_max"],
 	"timezone": "auto",
 	"past_days": 31,
@@ -51,6 +51,10 @@ daily_precipitation_probability = (daily_precipitation_probability_max[-1])
 daily_precipitation_sum = daily.Variables(0).ValuesAsNumpy()
 weekly_precipitation = round(sum(daily_precipitation_sum[-8:]))
 monthly_precipitation = round(sum(daily_precipitation_sum[-32:]))
+daily_et0_fao_evapotranspiration = daily.Variables(0).ValuesAsNumpy()
+daily_evapotranspiration = round(daily_et0_fao_evapotranspiration[-1])
+weekly_evapotranspiration = round(sum(daily_et0_fao_evapotranspiration[-8:]))
+
 
 
 
@@ -64,6 +68,8 @@ daily_data = {"date": pd.date_range(
 
 daily_data["precipitation_sum"] = daily_precipitation_sum
 daily_data["precipitation_probability_max"] = daily_precipitation_probability_max
+daily_data["et0_fao_evapotranspiration"] = daily_et0_fao_evapotranspiration
+
 
 daily_dataframe = pd.DataFrame(data = daily_data)
 print(daily_dataframe)
@@ -217,6 +223,25 @@ class DatiMeteo(ttk.Frame):
         self.precipitazioni_mensili_var.set(f"Pioggia cumulata negli ultimi 31gg: {monthly_precipitation} mm")
         self.precipitazioni_mensili_label = ttk.Label(self, textvariable=self.precipitazioni_mensili_var)
         self.precipitazioni_mensili_label.grid(column=0, row=6, sticky="w")
+        
+        self.evotranspirazione_var = tk.StringVar()
+        self.evotranspirazione_var.set(f"Evotranspirazione giornaliera (Et0): {daily_evapotranspiration} mm")
+        self.evotranspirazione_label = ttk.Label(self, textvariable=self.evotranspirazione_var)
+        self.evotranspirazione_label.grid(column=0, row=7, sticky="w")
+        
+        self.evotranspirazione_settimanale_var = tk.StringVar()
+        self.evotranspirazione_settimanale_var.set(f"Evotranspirazione settimanale (Et0): {weekly_evapotranspiration} mm")
+        self.evotranspirazione_settimanale_label = ttk.Label(self, textvariable=self.evotranspirazione_settimanale_var)
+        self.evotranspirazione_settimanale_label.grid(column=0, row=8, sticky="w")
+        
+        
+    
+    # def evotranspirazione_info():
+    #     info = Toplevel()
+    #     info.title("Cos'è l'Evotranspirazione?")
+    #     info_window = ttk.Label(info, text="Prova")
+    #     info_window.grid(column=0, row=7, sticky="e")
+    #     info_button = ttk.Button(info, text="Info", command=info.oe)
         
 
 
