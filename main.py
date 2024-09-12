@@ -234,14 +234,16 @@ class DatiMeteo(ttk.Frame):
         self.evotranspirazione_settimanale_label = ttk.Label(self, textvariable=self.evotranspirazione_settimanale_var)
         self.evotranspirazione_settimanale_label.grid(column=0, row=8, sticky="w")
         
+        self.info_button = ttk.Button(self, text="Info", command=self.evotranspirazione_info)
+        self.info_button.grid(column=1, row=8, sticky="e")
         
     
-    # def evotranspirazione_info():
-    #     info = Toplevel()
-    #     info.title("Cos'è l'Evotranspirazione?")
-    #     info_window = ttk.Label(info, text="Prova")
-    #     info_window.grid(column=0, row=7, sticky="e")
-    #     info_button = ttk.Button(info, text="Info", command=info.oe)
+    def evotranspirazione_info(self):
+        self.info = tk.Toplevel(self)
+        self.info.title("Cos'è l'Evotranspirazione?")
+        self.info_window = ttk.Label(self.info, text="Le piante, attraverso le radici, assorbono acqua dal suolo e la trasmettono sotto forma liquida gli apparati fogliari. Dal mesofillo fogliare l’acqua passa dallo stato liquido a quello di vapore, diffondendosi nell’atmosfera attraverso le aperture stomatiche. Questo fenomeno si indica con il termine di traspirazione. Allo stesso tempo il suolo perde acqua per evaporazione diretta. La somma della quantità d’acqua persa dal suolo per evaporazione e dalle piante per traspirazione costituisce il fenomeno dell’evapotraspirazione. In una coltura, l’evaporazione dipende anche dal grado di copertura della vegetazione presente e dalla quantità d’acqua disponibile. A suolo nudo, o nelle prime fasi di sviluppo della coltura, l’evaporazione sarà più elevata rispetto a quando il terreno è coperto dalle piante. Inizialmente, quindi, l’evaporazione sarà la componente principale dell’evapotraspirazione, per poi progressivamente diventarne una frazione modesta")
+        self.info_window.grid(column=0, row=9, sticky="e",columnspan=1)
+        
         
 
 
