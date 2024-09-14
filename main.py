@@ -233,15 +233,16 @@ class DatiMeteo(ttk.Frame):
         self.evotranspirazione_settimanale_var.set(f"Evotranspirazione settimanale (Et0): {weekly_evapotranspiration} mm")
         self.evotranspirazione_settimanale_label = ttk.Label(self, textvariable=self.evotranspirazione_settimanale_var)
         self.evotranspirazione_settimanale_label.grid(column=0, row=8, sticky="w")
+    
         
         
     
-    # def evotranspirazione_info():
-    #     info = Toplevel()
-    #     info.title("Cos'è l'Evotranspirazione?")
-    #     info_window = ttk.Label(info, text="Prova")
-    #     info_window.grid(column=0, row=7, sticky="e")
-    #     info_button = ttk.Button(info, text="Info", command=info.oe)
+    def evotranspirazione_info():
+         info = Toplevel()
+         info.title("Cos'è l'Evotranspirazione?")
+         info_window = ttk.Label(info, text="Prova")
+         info_window.grid(column=0, row=8, sticky="e")
+         info_button = ttk.Button(info, text="Info", command=info.oe)
         
 
 
