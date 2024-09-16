@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import *
 from PIL import ImageTk, Image
+import numpy as np
 
 # Setup the Open-Meteo API client with cache and retry on error
 cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
@@ -20,10 +21,11 @@ params = {
 	"latitude": 41.5864,
 	"longitude": 12.9707,
 	"current": ["temperature_2m", "relative_humidity_2m", "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "weather_code","et0_fao_evapotranspiration" ],
-	"daily": ["precipitation_sum", "precipitation_probability_max"],
+    "hourly": ["wind_speed_10m"],
+	"daily": ["precipitation_sum", "precipitation_probability_max","temperature_2m_max", "temperature_2m_min"],
 	"timezone": "auto",
 	"past_days": 31,
-	"forecast_days": 1
+	"forecast_days": 7
 }
 responses = openmeteo.weather_api(url, params=params)
 
@@ -33,6 +35,23 @@ print(f"Coordinates {response.Latitude()}°N {response.Longitude()}°E")
 print(f"Elevation {response.Elevation()} m asl")
 print(f"Timezone {response.Timezone()} {response.TimezoneAbbreviation()}")
 print(f"Timezone difference to GMT+0 {response.UtcOffsetSeconds()} s")
+
+hourly = response.Hourly()
+hourly_wind_speed_10m = hourly.Variables(0).ValuesAsNumpy()
+input_list = hourly_wind_speed_10m[-25:]
+wind_avg = np.mean(input_list)
+rounded_wind_avg = round(wind_avg)
+
+hourly_data = {"date": pd.date_range(
+	start = pd.to_datetime(hourly.Time(), unit = "s", utc = True),
+	end = pd.to_datetime(hourly.TimeEnd(), unit = "s", utc = True),
+	freq = pd.Timedelta(seconds = hourly.Interval()),
+	inclusive = "left"
+)}
+hourly_data["wind_speed_10m"] = hourly_wind_speed_10m
+
+hourly_dataframe = pd.DataFrame(data = hourly_data)
+print(hourly_dataframe)
 
 # Current values. The order of variables needs to be the same as requested.
 current = response.Current()
@@ -54,6 +73,8 @@ monthly_precipitation = round(sum(daily_precipitation_sum[-32:]))
 daily_et0_fao_evapotranspiration = daily.Variables(0).ValuesAsNumpy()
 daily_evapotranspiration = round(daily_et0_fao_evapotranspiration[-1])
 weekly_evapotranspiration = round(sum(daily_et0_fao_evapotranspiration[-8:]))
+daily_temperature_2m_max = daily.Variables(2).ValuesAsNumpy()
+daily_temperature_2m_min = daily.Variables(3).ValuesAsNumpy()
 
 
 
@@ -66,9 +87,8 @@ daily_data = {"date": pd.date_range(
 )}
 
 
-daily_data["precipitation_sum"] = daily_precipitation_sum
-daily_data["precipitation_probability_max"] = daily_precipitation_probability_max
-daily_data["et0_fao_evapotranspiration"] = daily_et0_fao_evapotranspiration
+daily_data["temperature_2m_max"] = daily_temperature_2m_max
+daily_data["temperature_2m_min"] = daily_temperature_2m_min
 
 
 daily_dataframe = pd.DataFrame(data = daily_data)
@@ -172,6 +192,7 @@ class DatiMeteo(ttk.Frame):
         self.velocità_vento_var.set(f"Velocità del vento: {current_wind_speed_10m} Km/h")
         self.velocità_vento_label = ttk.Label(self, textvariable=self.velocità_vento_var)
         self.velocità_vento_label.grid(column=0, row=2, sticky="w")
+
         
         self.direzione_vento_var = tk.StringVar()
         if current_wind_direction_10m == 0 or 360:
@@ -233,9 +254,15 @@ class DatiMeteo(ttk.Frame):
         self.evotranspirazione_settimanale_var.set(f"Evotranspirazione settimanale (Et0): {weekly_evapotranspiration} mm")
         self.evotranspirazione_settimanale_label = ttk.Label(self, textvariable=self.evotranspirazione_settimanale_var)
         self.evotranspirazione_settimanale_label.grid(column=0, row=8, sticky="w")
-        
+    
         self.info_button = ttk.Button(self, text="Info", command=self.evotranspirazione_info)
-        self.info_button.grid(column=1, row=8, sticky="e")
+        self.info_button.grid(column=1, row=8, sticky="e", padx =5)
+        
+        self.media_velocità_vento_var = tk.StringVar()
+        self.media_velocità_vento_var.set(f"Media 24h velocità del vento: {rounded_wind_avg} Km/h")
+        self.media_velocità_vento_label = ttk.Label(self, textvariable=self.media_velocità_vento_var)
+        self.media_velocità_vento_label.grid(column=0, row=9, sticky="w")
+        
         
     
     def evotranspirazione_info(self):
@@ -253,7 +280,6 @@ class DatiMeteo(ttk.Frame):
                                      
 
         self.info_window.grid(column=0, row=0, rowspan=2)
-        
         
 
 
