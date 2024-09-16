@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import *
 from PIL import ImageTk, Image
+import numpy as np
 
 # Setup the Open-Meteo API client with cache and retry on error
 cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
@@ -20,6 +21,7 @@ params = {
 	"latitude": 41.5864,
 	"longitude": 12.9707,
 	"current": ["temperature_2m", "relative_humidity_2m", "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "weather_code","et0_fao_evapotranspiration" ],
+    "hourly": ["wind_speed_10m"],
 	"daily": ["precipitation_sum", "precipitation_probability_max"],
 	"timezone": "auto",
 	"past_days": 31,
@@ -33,6 +35,23 @@ print(f"Coordinates {response.Latitude()}°N {response.Longitude()}°E")
 print(f"Elevation {response.Elevation()} m asl")
 print(f"Timezone {response.Timezone()} {response.TimezoneAbbreviation()}")
 print(f"Timezone difference to GMT+0 {response.UtcOffsetSeconds()} s")
+
+hourly = response.Hourly()
+hourly_wind_speed_10m = hourly.Variables(0).ValuesAsNumpy()
+input_list = hourly_wind_speed_10m[-25:]
+wind_avg = np.mean(input_list)
+rounded_wind_avg = round(wind_avg)
+
+hourly_data = {"date": pd.date_range(
+	start = pd.to_datetime(hourly.Time(), unit = "s", utc = True),
+	end = pd.to_datetime(hourly.TimeEnd(), unit = "s", utc = True),
+	freq = pd.Timedelta(seconds = hourly.Interval()),
+	inclusive = "left"
+)}
+hourly_data["wind_speed_10m"] = hourly_wind_speed_10m
+
+hourly_dataframe = pd.DataFrame(data = hourly_data)
+print(hourly_dataframe)
 
 # Current values. The order of variables needs to be the same as requested.
 current = response.Current()
@@ -172,6 +191,7 @@ class DatiMeteo(ttk.Frame):
         self.velocità_vento_var.set(f"Velocità del vento: {current_wind_speed_10m} Km/h")
         self.velocità_vento_label = ttk.Label(self, textvariable=self.velocità_vento_var)
         self.velocità_vento_label.grid(column=0, row=2, sticky="w")
+
         
         self.direzione_vento_var = tk.StringVar()
         if current_wind_direction_10m == 0 or 360:
@@ -234,15 +254,31 @@ class DatiMeteo(ttk.Frame):
         self.evotranspirazione_settimanale_label = ttk.Label(self, textvariable=self.evotranspirazione_settimanale_var)
         self.evotranspirazione_settimanale_label.grid(column=0, row=8, sticky="w")
     
+        self.info_button = ttk.Button(self, text="Info", command=self.evotranspirazione_info)
+        self.info_button.grid(column=1, row=8, sticky="e", padx =5)
+        
+        self.media_velocità_vento_var = tk.StringVar()
+        self.media_velocità_vento_var.set(f"Media 24h velocità del vento: {rounded_wind_avg} Km/h")
+        self.media_velocità_vento_label = ttk.Label(self, textvariable=self.media_velocità_vento_var)
+        self.media_velocità_vento_label.grid(column=0, row=9, sticky="w")
         
         
     
-    def evotranspirazione_info():
-         info = Toplevel()
-         info.title("Cos'è l'Evotranspirazione?")
-         info_window = ttk.Label(info, text="Prova")
-         info_window.grid(column=0, row=8, sticky="e")
-         info_button = ttk.Button(info, text="Info", command=info.oe)
+    def evotranspirazione_info(self):
+        self.info = tk.Toplevel(self)
+        self.info.title("Cos'è l'Evotranspirazione?")
+        self.info.geometry("1035x170")
+        self.info_window = ttk.Label(self.info, text="""
+        Le piante, attraverso le radici, assorbono acqua dal suolo e la trasmettono sotto forma liquida gli apparati fogliari. 
+        Dal mesofillo fogliare l’acqua passa dallo stato liquido a quello di vapore, diffondendosi nell’atmosfera attraverso le aperture stomatiche. 
+        Questo fenomeno si indica con il termine di traspirazione. sAllo stesso tempo il suolo perde acqua per evaporazione diretta. 
+        La somma della quantità d’acqua persa dal suolo per evaporazione e dalle piante per traspirazione costituisce il fenomeno dell’evapotraspirazione. 
+        In una coltura, l’evaporazione dipende anche dal grado di copertura della vegetazione presente e dalla quantità d’acqua disponibile. 
+        A suolo nudo, o nelle prime fasi di sviluppo della coltura, l’evaporazione sarà più elevata rispetto a quando il terreno è coperto dalle piante.
+        Inizialmente, quindi, l’evaporazione sarà la componente principale dell’evapotraspirazione, per poi progressivamente diventarne una frazione modesta.""")
+                                     
+
+        self.info_window.grid(column=0, row=0, rowspan=2)
         
 
 
