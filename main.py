@@ -73,8 +73,7 @@ monthly_precipitation = round(sum(daily_precipitation_sum[-32:]))
 daily_et0_fao_evapotranspiration = daily.Variables(0).ValuesAsNumpy()
 daily_evapotranspiration = round(daily_et0_fao_evapotranspiration[-1])
 weekly_evapotranspiration = round(sum(daily_et0_fao_evapotranspiration[-8:]))
-daily_temperature_2m_max = daily.Variables(2).ValuesAsNumpy()
-daily_temperature_2m_min = daily.Variables(3).ValuesAsNumpy()
+
 
 
 
@@ -87,8 +86,7 @@ daily_data = {"date": pd.date_range(
 )}
 
 
-daily_data["temperature_2m_max"] = daily_temperature_2m_max
-daily_data["temperature_2m_min"] = daily_temperature_2m_min
+
 
 
 daily_dataframe = pd.DataFrame(data = daily_data)
@@ -280,7 +278,10 @@ class DatiMeteo(ttk.Frame):
                                      
 
         self.info_window.grid(column=0, row=0, rowspan=2)
-        
+    
+    def modificaColori(self):
+        if self.current_temperature_2m > 5:
+            self.temperatura_label.config(background="red")
 
 
 def Calcolo_resa(olive_input, olio_input, resa_input):
@@ -297,7 +298,7 @@ def Calcolo_resa(olive_input, olio_input, resa_input):
 root = Agriweather()
 style = ttk.Style(root)
 
-style.theme_use("alt")
+style.theme_use("default")
 
 root.mainloop()
 
