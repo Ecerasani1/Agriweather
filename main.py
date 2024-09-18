@@ -261,6 +261,8 @@ class DatiMeteo(ttk.Frame):
         self.media_velocità_vento_label = ttk.Label(self, textvariable=self.media_velocità_vento_var)
         self.media_velocità_vento_label.grid(column=0, row=9, sticky="w")
         
+        self.modificaColori()
+        
         
     
     def evotranspirazione_info(self):
@@ -278,10 +280,15 @@ class DatiMeteo(ttk.Frame):
                                      
 
         self.info_window.grid(column=0, row=0, rowspan=2)
+        
     
     def modificaColori(self):
-        if self.current_temperature_2m > 5:
-            self.temperatura_label.config(background="red")
+        temperatura = float(self.temperatura_var.get().split(": ")[1][:-2])
+        if temperatura >= 35:
+            self.temperatura_label.config(background="#fd5959")
+            # self.temperatura_label.event_generate
+        elif temperatura <= 0:
+            self.temperatura_label.config(background="#248888")
 
 
 def Calcolo_resa(olive_input, olio_input, resa_input):
@@ -298,7 +305,7 @@ def Calcolo_resa(olive_input, olio_input, resa_input):
 root = Agriweather()
 style = ttk.Style(root)
 
-style.theme_use("default")
+style.theme_use("classic")
 
 root.mainloop()
 
