@@ -286,9 +286,15 @@ class DatiMeteo(ttk.Frame):
         temperatura = float(self.temperatura_var.get().split(": ")[1][:-2])
         if temperatura >= 35:
             self.temperatura_label.config(background="#fd5959")
-            # self.temperatura_label.event_generate
         elif temperatura <= 0:
             self.temperatura_label.config(background="#248888")
+        umidità = float(self.umidità_var.get().split(": ")[1][:-2])
+        if umidità >= 80:
+            self.umidità_label.config(background="#248888")
+        elif temperatura <= 35:
+            self.umidità_label.config(background="#fd5959")
+            
+        
 
 
 def Calcolo_resa(olive_input, olio_input, resa_input):
