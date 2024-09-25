@@ -8,6 +8,7 @@ from tkinter import ttk
 from tkinter import *
 from PIL import ImageTk, Image
 import numpy as np
+from tkinter import messagebox
 
 # Setup the Open-Meteo API client with cache and retry on error
 cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
@@ -22,10 +23,10 @@ params = {
 	"longitude": 12.9707,
 	"current": ["temperature_2m", "relative_humidity_2m", "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "weather_code","et0_fao_evapotranspiration" ],
     "hourly": ["wind_speed_10m"],
-	"daily": ["precipitation_sum", "precipitation_probability_max"],
+	"daily": ["precipitation_sum", "precipitation_probability_max","temperature_2m_max", "temperature_2m_min"],
 	"timezone": "auto",
 	"past_days": 31,
-	"forecast_days": 1
+	"forecast_days": 7
 }
 responses = openmeteo.weather_api(url, params=params)
 
@@ -77,6 +78,7 @@ weekly_evapotranspiration = round(sum(daily_et0_fao_evapotranspiration[-8:]))
 
 
 
+
 daily_data = {"date": pd.date_range(
 	start = pd.to_datetime(daily.Time(), unit = "s", utc = True),
 	end = pd.to_datetime(daily.TimeEnd(), unit = "s", utc = True),
@@ -85,9 +87,7 @@ daily_data = {"date": pd.date_range(
 )}
 
 
-daily_data["precipitation_sum"] = daily_precipitation_sum
-daily_data["precipitation_probability_max"] = daily_precipitation_probability_max
-daily_data["et0_fao_evapotranspiration"] = daily_et0_fao_evapotranspiration
+
 
 
 daily_dataframe = pd.DataFrame(data = daily_data)
@@ -262,6 +262,8 @@ class DatiMeteo(ttk.Frame):
         self.media_velocità_vento_label = ttk.Label(self, textvariable=self.media_velocità_vento_var)
         self.media_velocità_vento_label.grid(column=0, row=9, sticky="w")
         
+        self.modificaColori()
+        
         
     
     def evotranspirazione_info(self):
@@ -280,6 +282,32 @@ class DatiMeteo(ttk.Frame):
 
         self.info_window.grid(column=0, row=0, rowspan=2)
         
+    
+    def modificaColori(self):
+        temperatura = float(self.temperatura_var.get().split(": ")[1][:-2])
+        if temperatura >= 35:
+            self.temperatura_label.config(background="#fd5959")
+            messagebox.showinfo("AVVISO","Attenzione, oggi ci sono temperature sopra i 35°C. Per periodi prolungati temperature così elevate possono causare danni significativi a molte colture sensibili. Questo può portare a disidratazione delle colture, arresto della fotosintesi e appassimento delle foglie. Le alte temperature riducono anche la qualità dei frutti, inducendo ustioni o danni da calore, e limitano lo sviluppo ottimale delle piante.")
+        elif temperatura <= 0:
+            self.temperatura_label.config(background="#248888")
+            messagebox.showinfo("AVVISO", "Attenzione, oggi ci sono temperature sotto i 0°C: fare attenzione specialmente durante il periodo di fioritura e soprattutto durante la notte, possono provocare gelate che danneggiano gravemente le colture. Le gelate interrompono i processi cellulari delle piante, provocando il collasso delle pareti cellulari e, quindi, la morte dei tessuti vegetali.")
+        umidità = float(self.umidità_var.get().split(": ")[1][:-2])
+        if umidità >= 80:
+            self.umidità_label.config(background="#248888")
+            messagebox.showinfo("AVVISO","Attenzione, oggi l'umidità è elevata. Se si mantiene se prolungata crea un ambiente favorevole alla proliferazione di funghi e malattie. Le foglie e i frutti rimangono bagnati più a lungo, aumentando il rischio di infezioni fungine come la peronospora, la muffa grigia e l'oidio. Inoltre, l'umidità elevata può ostacolare la traspirazione delle piante, causando stress fisiologico.")
+        elif temperatura <= 35:
+            self.umidità_label.config(background="#fd5959")
+            messagebox.showinfo("AVVISO", "Attenzione, oggi l'umidità è bassa. Il tasso di umidità scarso comporta una maggiore traspirazione delle piante, provocando un eccesso di evaporazione e disidratazione, soprattutto in giornate ventose e calde. Le colture diventano più suscettibili allo stress idrico e possono mostrare segni di appassimento anche con irrigazione adeguata.")
+        vento = float(self.velocità_vento_var.get().split()[3])
+        if vento >= 30:
+            self.velocità_vento_label.config(background="#fd5959")
+            messagebox.showinfo("AVVISO","Il vento forte, soprattutto oltre i 30 km/h, può causare danni meccanici alle piante, in particolare a quelle più alte e fragili come i cereali. Può provocare la caduta dei frutti dagli alberi o danneggiare le strutture di supporto (come i tralicci). A velocità ancora maggiori, il vento può strappare foglie e steli e abbattere interi campi di colture.")
+        raffica_vento = float(self.raffica_vento_var.get().split()[4])
+        if vento >= 60:
+            self.raffica_vento_label.config(background="#fd5959")
+            
+            
+        
 
 
 def Calcolo_resa(olive_input, olio_input, resa_input):
@@ -296,10 +324,6 @@ def Calcolo_resa(olive_input, olio_input, resa_input):
 root = Agriweather()
 style = ttk.Style(root)
 
-style.theme_use("alt")
+style.theme_use("classic")
 
 root.mainloop()
-
-
-
-
